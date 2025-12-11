@@ -185,17 +185,28 @@ exports.createEvent = asyncHandler(async (req, res) => {
     customRegistrationFields: parsedCustomFields,
   };
 
-  console.log("🟫 Event payload to save:", {
-    ...eventPayload,
-    // don't log huge base64 in console; show length if present
-    imageBackupLength: imageBackup ? imageBackup.length : 0,
-  });
+  try {
+    const event = await Event.create(eventPayload);
+    res.status(201).json(event);
 
-  const event = await Event.create(eventPayload);
+  } catch (error) {
 
-  console.log("🟧 Event created:", { id: event._id, name: event.name, imageUrl: event.imageUrl || "(none)" });
+    // ✅ CHANGED: Custom error for duplicate eventId
+    if (error.code === 11000 && error.keyPattern?.eventId) {
+     return  res.status(400).json({
+      message:"An event is already generated with the same ID."
+     });
+     
+    }
 
-  res.status(201).json(event);
+    // ✅ CHANGED: Fallback error
+    console.error("Error creating event:", error);
+    res.status(500);
+    throw new Error("Failed to create event.");
+  }
+  // ============================================================
+  // ✅ CHANGED PART ENDS HERE
+  // ============================================================
 });
 
 
