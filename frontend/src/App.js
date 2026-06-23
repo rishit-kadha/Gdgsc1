@@ -13,7 +13,7 @@ import AdminPage from "./Pages/AdminPage";
 import MeetTeam from "./Pages/MeetTeam";
 import Gallery from "./Pages/gallery";
 import StayTuned from "./Pages/StayTuned";
-import Gamepage from "./Pages/GamePage";
+import GamePage from "./Pages/Gamepage";
 const App = () => {
   return (
     <BrowserRouter>
@@ -42,7 +42,7 @@ const MainRoutes = () => {
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/games" element={<Gamepage />} />
+        <Route path="/games" element={<GamePage />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/stay-tuned" element={<StayTuned />} />
       </Routes>
