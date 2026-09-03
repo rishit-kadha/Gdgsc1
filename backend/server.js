@@ -3,6 +3,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./src/config/db');
+const { getMongoUri } = require('./src/config/db');
 const cors = require('cors');
 const passport = require('passport');
 const path = require('path');
@@ -26,7 +27,7 @@ const config = {
 };
 
 if (process.env.NODE_ENV !== 'test') {
-    console.log(`Running in ${process.env.NODE_ENV} mode`);
+    console.log(`Running in ${process.env.NODE_ENV || 'development'} mode`);
     console.log(`Frontend URL: ${config.frontendUrl}`);
     console.log(`Backend URL: ${config.backendUrl}`);
     console.log(`Games feature enabled: ${isGamesEnabled}`);
@@ -35,7 +36,7 @@ if (process.env.NODE_ENV !== 'test') {
 // Passport config
 require('./src/config/passport')(passport);
 
-// Connect to database (only if not in test or if test explicitly handles db)
+// Connect to database (only if not in test)
 if (process.env.NODE_ENV !== 'test') {
     connectDB();
 }
@@ -67,32 +68,37 @@ app.use(express.json()); // For JSON data
 app.use(express.urlencoded({ extended: false })); // For form data
 
 // Session Middleware (needed for Passport.js OAuth flows)
-if (process.env.NODE_ENV !== 'test' && process.env.MONGO_URI) {
-    app.use(
-        session({
-            secret: process.env.SESSION_SECRET || 'gdgsc_session_secret',
-            resave: false,
-            saveUninitialized: false,
-            store: MongoStore.create({
-                mongoUrl: process.env.MONGO_URI,
-                collectionName: 'sessions',
-                ttl: 14 * 24 * 60 * 60,
-                autoRemove: 'interval',
-                autoRemoveInterval: 10,
-            }),
-            cookie: {
-                maxAge: 1000 * 60 * 60 * 24,
-                secure: process.env.NODE_ENV === 'production',
-                httpOnly: true,
-                sameSite: 'lax',
-            },
-        })
-    );
+if (process.env.NODE_ENV !== 'test') {
+    try {
+        const mongoUrl = getMongoUri();
+        app.use(
+            session({
+                secret: process.env.SESSION_SECRET || 'gdgsc_session_secret',
+                resave: false,
+                saveUninitialized: false,
+                store: MongoStore.create({
+                    mongoUrl: mongoUrl,
+                    collectionName: 'sessions',
+                    ttl: 14 * 24 * 60 * 60,
+                    autoRemove: 'interval',
+                    autoRemoveInterval: 10,
+                }),
+                cookie: {
+                    maxAge: 1000 * 60 * 60 * 24,
+                    secure: process.env.NODE_ENV === 'production',
+                    httpOnly: true,
+                    sameSite: 'lax',
+                },
+            })
+        );
+    } catch (err) {
+        console.warn(`Session store initialization warning: ${err.message}`);
+    }
 }
 
 // Passport middleware
 app.use(passport.initialize());
-if (process.env.NODE_ENV !== 'test' && process.env.MONGO_URI) {
+if (process.env.NODE_ENV !== 'test') {
     app.use(passport.session());
 }
 

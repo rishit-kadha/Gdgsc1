@@ -5,6 +5,7 @@ Production-ready, high-performance object storage and asset management API for g
 ---
 
 ## Table of Contents
+
 1. [Architecture & Design Principles](#architecture--design-principles)
 2. [Cloudflare R2 Setup](#cloudflare-r2-setup)
 3. [Bucket CORS Configuration](#bucket-cors-configuration)
@@ -41,12 +42,13 @@ Production-ready, high-performance object storage and asset management API for g
 ```
 
 ### Core Rules
-* **Zero Backend Proxying**: The backend never receives large binary files in memory or proxies downloads.
-* **Presigned URLs**: Direct client-to-R2 transfers for both single uploads and multipart chunks.
-* **Public vs. Private Assets**:
-  * **Public**: Screenshots, covers, trailers can be served directly through Cloudflare R2 Custom Domain / CDN without repeated signed URLs.
-  * **Private**: Game builds, prerelease builds, internal assets require authentication and generate short-lived (1 hour) presigned GET URLs.
-* **State Verification**: Assets transition through `pending` / `uploading` $\rightarrow$ `ready` only after backend verifies object existence in R2 via `HeadObject`.
+
+- **Zero Backend Proxying**: The backend never receives large binary files in memory or proxies downloads.
+- **Presigned URLs**: Direct client-to-R2 transfers for both single uploads and multipart chunks.
+- **Public vs. Private Assets**:
+  - **Public**: Screenshots, covers, trailers can be served directly through Cloudflare R2 Custom Domain / CDN without repeated signed URLs.
+  - **Private**: Game builds, prerelease builds, internal assets require authentication and generate short-lived (1 hour) presigned GET URLs.
+- **State Verification**: Assets transition through `pending` / `uploading` $\rightarrow$ `ready` only after backend verifies object existence in R2 via `HeadObject`.
 
 ---
 
@@ -55,14 +57,14 @@ Production-ready, high-performance object storage and asset management API for g
 1. **Log in to Cloudflare Dashboard** and navigate to **R2** in the sidebar.
 2. Click **Create bucket** and name it `gdgsc-game-assets` (or your preferred name).
 3. Under **R2** > **Manage R2 API Tokens**, click **Create API Token**:
-   * **Permissions**: `Object Read & Write`
-   * **Apply to**: Specific bucket (`gdgsc-game-assets`) or All buckets
-   * **TTL**: Optional expiration or permanent
+   - **Permissions**: `Object Read & Write`
+   - **Apply to**: Specific bucket (`gdgsc-game-assets`) or All buckets
+   - **TTL**: Optional expiration or permanent
 4. Copy:
-   * **Account ID** (found on R2 overview page)
-   * **Access Key ID**
-   * **Secret Access Key**
-5. *(Optional for Public Assets)* Under Bucket Settings > **Public Access**, enable **Custom Domain** (e.g. `assets.gdgsc.dev`) or **R2.dev subdomain**.
+   - **Account ID** (found on R2 overview page)
+   - **Access Key ID**
+   - **Secret Access Key**
+5. _(Optional for Public Assets)_ Under Bucket Settings > **Public Access**, enable **Custom Domain** (e.g. `assets.gdgsc.dev`) or **R2.dev subdomain**.
 
 ---
 
@@ -80,21 +82,9 @@ In Cloudflare Dashboard: **Bucket** > **Settings** > **CORS Policy** > **Edit JS
       "https://www.gdgsc.dev",
       "https://gdgsc.dev"
     ],
-    "AllowedMethods": [
-      "GET",
-      "PUT",
-      "POST",
-      "HEAD",
-      "DELETE"
-    ],
-    "AllowedHeaders": [
-      "*"
-    ],
-    "ExposeHeaders": [
-      "ETag",
-      "Content-Length",
-      "Content-Type"
-    ],
+    "AllowedMethods": ["GET", "PUT", "POST", "HEAD", "DELETE"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"],
     "MaxAgeSeconds": 3600
   }
 ]
@@ -137,70 +127,77 @@ games/{gameId}/assets/{uniquePrefix}-{sanitizedFilename}
 ```
 
 ### Examples:
-* `games/cyber-racer/files/v1.0.0/a1b2c3d4-cyber-racer-win64.zip`
-* `games/cyber-racer/images/e5f6g7h8-cover-banner.webp`
-* `games/cyber-racer/videos/9i0j1k2l-gameplay-trailer.mp4`
+
+- `games/cyber-racer/files/v1.0.0/a1b2c3d4-cyber-racer-win64.zip`
+- `games/cyber-racer/images/e5f6g7h8-cover-banner.webp`
+- `games/cyber-racer/videos/9i0j1k2l-gameplay-trailer.mp4`
 
 ---
 
 ## Database Schema
 
 ### `Game` Model
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` / `_id` | ObjectId | Unique identifier |
-| `title` / `name` | String | Game display title |
-| `slug` | String | URL-friendly unique identifier (indexed) |
-| `description` | String | Short synopsis |
-| `fullStory` | String | Extended lore & narrative |
-| `genre` | String | Genre category |
-| `developer` | String | Student dev / studio name |
-| `image` | String | Cover artwork URL |
-| `platforms` | [String] | Supported OS / platforms |
-| `isFeatured` | Boolean | Highlight in store spotlight |
-| `isActive` | Boolean | Visibility status |
+
+| Field            | Type     | Description                              |
+| :--------------- | :------- | :--------------------------------------- |
+| `id` / `_id`     | ObjectId | Unique identifier                        |
+| `title` / `name` | String   | Game display title                       |
+| `slug`           | String   | URL-friendly unique identifier (indexed) |
+| `description`    | String   | Short synopsis                           |
+| `fullStory`      | String   | Extended lore & narrative                |
+| `genre`          | String   | Genre category                           |
+| `developer`      | String   | Student dev / studio name                |
+| `image`          | String   | Cover artwork URL                        |
+| `platforms`      | [String] | Supported OS / platforms                 |
+| `isFeatured`     | Boolean  | Highlight in store spotlight             |
+| `isActive`       | Boolean  | Visibility status                        |
 
 ### `GameAsset` Model
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` / `_id` | ObjectId | Unique asset identifier |
-| `game` | ObjectId (Ref: Game) | Associated game |
-| `type` | Enum (`file`, `image`, `video`) | Asset media type |
-| `category` | Enum (`build`, `thumbnail`, `banner`, `screenshot`, `trailer`, `asset`, `other`) | Semantic category |
-| `originalFilename` | String | Original client filename |
-| `storageKey` | String | Cloudflare R2 object key |
-| `mimeType` | String | Validated MIME type |
-| `fileSize` | Number | File size in bytes |
-| `version` | String | Semantic version (e.g. `v1.0.0`) |
-| `checksum` | String | ETag / hash from R2 |
-| `status` | Enum (`pending`, `uploading`, `ready`, `failed`, `deleted`) | Upload lifecycle status |
-| `visibility` | Enum (`public`, `private`) | Public CDN vs. Signed GET |
-| `uploadId` | String | Active multipart upload ID |
-| `parts` | Array | Multipart parts metadata |
+
+| Field              | Type                                                                             | Description                      |
+| :----------------- | :------------------------------------------------------------------------------- | :------------------------------- |
+| `id` / `_id`       | ObjectId                                                                         | Unique asset identifier          |
+| `game`             | ObjectId (Ref: Game)                                                             | Associated game                  |
+| `type`             | Enum (`file`, `image`, `video`)                                                  | Asset media type                 |
+| `category`         | Enum (`build`, `thumbnail`, `banner`, `screenshot`, `trailer`, `asset`, `other`) | Semantic category                |
+| `originalFilename` | String                                                                           | Original client filename         |
+| `storageKey`       | String                                                                           | Cloudflare R2 object key         |
+| `mimeType`         | String                                                                           | Validated MIME type              |
+| `fileSize`         | Number                                                                           | File size in bytes               |
+| `version`          | String                                                                           | Semantic version (e.g. `v1.0.0`) |
+| `checksum`         | String                                                                           | ETag / hash from R2              |
+| `status`           | Enum (`pending`, `uploading`, `ready`, `failed`, `deleted`)                      | Upload lifecycle status          |
+| `visibility`       | Enum (`public`, `private`)                                                       | Public CDN vs. Signed GET        |
+| `uploadId`         | String                                                                           | Active multipart upload ID       |
+| `parts`            | Array                                                                            | Multipart parts metadata         |
 
 ---
 
 ## API Reference
 
 All responses follow the unified envelope:
-* **Success**: `{ "success": true, "data": { ... } }`
-* **Error**: `{ "success": false, "error": { "code": "ERROR_CODE", "message": "..." } }`
+
+- **Success**: `{ "success": true, "data": { ... } }`
+- **Error**: `{ "success": false, "error": { "code": "ERROR_CODE", "message": "..." } }`
 
 ---
 
 ### Games API
 
 #### 1. List Games
+
 ```http
 GET /api/games?genre=Racing&search=cyber&isFeatured=true
 ```
 
 #### 2. Get Game by ID or Slug
+
 ```http
 GET /api/games/:gameId
 ```
 
 #### 3. Create Game (Admin)
+
 ```http
 POST /api/games
 Authorization: Bearer <ADMIN_TOKEN>
@@ -216,6 +213,7 @@ Content-Type: application/json
 ```
 
 #### 4. Update Game (Admin)
+
 ```http
 PATCH /api/games/:gameId
 Authorization: Bearer <ADMIN_TOKEN>
@@ -228,6 +226,7 @@ Content-Type: application/json
 ```
 
 #### 5. Delete Game (Admin)
+
 ```http
 DELETE /api/games/:gameId
 Authorization: Bearer <ADMIN_TOKEN>
@@ -240,6 +239,7 @@ Authorization: Bearer <ADMIN_TOKEN>
 Used for images, videos, and builds under 20MB.
 
 #### Step 1: Request Upload URL
+
 ```http
 POST /api/games/:gameId/assets/upload
 Authorization: Bearer <ADMIN_TOKEN>
@@ -257,6 +257,7 @@ Content-Type: application/json
 ```
 
 **Response (`201 Created`):**
+
 ```json
 {
   "success": true,
@@ -270,6 +271,7 @@ Content-Type: application/json
 ```
 
 #### Step 2: Upload Directly to R2
+
 ```http
 PUT <uploadUrl>
 Content-Type: application/zip
@@ -278,12 +280,14 @@ Content-Type: application/zip
 ```
 
 #### Step 3: Complete Upload Verification
+
 ```http
 POST /api/assets/:assetId/complete
 Authorization: Bearer <ADMIN_TOKEN>
 ```
 
 **Response (`200 OK`):**
+
 ```json
 {
   "success": true,
@@ -304,12 +308,14 @@ Authorization: Bearer <ADMIN_TOKEN>
 ### Asset Download & Serving
 
 #### Get Asset Download / Stream URL
+
 ```http
 GET /api/assets/:assetId/url?download=true
 Authorization: Bearer <TOKEN>   # (Required if asset is private)
 ```
 
 **Response (`200 OK`):**
+
 ```json
 {
   "success": true,
@@ -329,6 +335,7 @@ Authorization: Bearer <TOKEN>   # (Required if asset is private)
 Recommended for files $> 20\text{ MB}$ up to $5\text{ GB}$.
 
 #### 1. Start Multipart Upload
+
 ```http
 POST /api/games/:gameId/assets/multipart/start
 Authorization: Bearer <ADMIN_TOKEN>
@@ -345,6 +352,7 @@ Content-Type: application/json
 ```
 
 **Response (`201 Created`):**
+
 ```json
 {
   "success": true,
@@ -358,6 +366,7 @@ Content-Type: application/json
 ```
 
 #### 2. Sign Part
+
 ```http
 POST /api/assets/:assetId/multipart/sign
 Authorization: Bearer <ADMIN_TOKEN>
@@ -369,6 +378,7 @@ Content-Type: application/json
 ```
 
 **Response (`200 OK`):**
+
 ```json
 {
   "success": true,
@@ -379,9 +389,10 @@ Content-Type: application/json
 }
 ```
 
-*Client executes: `PUT <presignedUrl>` with chunk bytes, and captures the `ETag` response header.*
+_Client executes: `PUT <presignedUrl>` with chunk bytes, and captures the `ETag` response header._
 
 #### 3. Complete Multipart Upload
+
 ```http
 POST /api/assets/:assetId/multipart/complete
 Authorization: Bearer <ADMIN_TOKEN>
@@ -396,6 +407,7 @@ Content-Type: application/json
 ```
 
 #### 4. Abort Multipart Upload (if canceled or error)
+
 ```http
 POST /api/assets/:assetId/multipart/abort
 Authorization: Bearer <ADMIN_TOKEN>
@@ -406,8 +418,9 @@ Authorization: Bearer <ADMIN_TOKEN>
 ## Frontend Integration Examples
 
 ### Example 1: Single File Upload with Axios
+
 ```typescript
-import axios from 'axios';
+import axios from "axios";
 
 async function uploadGameAsset({
   gameId,
@@ -419,37 +432,37 @@ async function uploadGameAsset({
 }: {
   gameId: string;
   file: File;
-  category: 'build' | 'banner' | 'screenshot' | 'trailer';
+  category: "build" | "banner" | "screenshot" | "trailer";
   version?: string;
   token: string;
   onProgress?: (pct: number) => void;
 }) {
   // Determine asset type
-  const type = file.type.startsWith('image/')
-    ? 'image'
-    : file.type.startsWith('video/')
-    ? 'video'
-    : 'file';
+  const type = file.type.startsWith("image/")
+    ? "image"
+    : file.type.startsWith("video/")
+      ? "video"
+      : "file";
 
   // 1. Request presigned upload URL from backend
   const initRes = await axios.post(
     `/api/games/${gameId}/assets/upload`,
     {
       filename: file.name,
-      contentType: file.type || 'application/octet-stream',
+      contentType: file.type || "application/octet-stream",
       size: file.size,
       type,
       category,
       version,
     },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers: { Authorization: `Bearer ${token}` } },
   );
 
   const { assetId, uploadUrl } = initRes.data.data;
 
   // 2. Upload directly to Cloudflare R2
   await axios.put(uploadUrl, file, {
-    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    headers: { "Content-Type": file.type || "application/octet-stream" },
     onUploadProgress: (evt) => {
       if (evt.total && onProgress) {
         onProgress(Math.round((evt.loaded * 100) / evt.total));
@@ -461,7 +474,7 @@ async function uploadGameAsset({
   const completeRes = await axios.post(
     `/api/assets/${assetId}/complete`,
     {},
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers: { Authorization: `Bearer ${token}` } },
   );
 
   return completeRes.data.data.asset;
@@ -469,8 +482,9 @@ async function uploadGameAsset({
 ```
 
 ### Example 2: Large File Chunked Multipart Upload
+
 ```typescript
-import axios from 'axios';
+import axios from "axios";
 
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB chunks
 
@@ -492,13 +506,13 @@ async function uploadLargeGameBuild({
     `/api/games/${gameId}/assets/multipart/start`,
     {
       filename: file.name,
-      contentType: file.type || 'application/zip',
+      contentType: file.type || "application/zip",
       size: file.size,
-      type: 'file',
-      category: 'build',
+      type: "file",
+      category: "build",
       version,
     },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers: { Authorization: `Bearer ${token}` } },
   );
 
   const { assetId } = startRes.data.data;
@@ -516,14 +530,15 @@ async function uploadLargeGameBuild({
       const signRes = await axios.post(
         `/api/assets/${assetId}/multipart/sign`,
         { partNumber },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       const { presignedUrl } = signRes.data.data;
 
       // 3. Upload chunk to R2
       const partUploadRes = await axios.put(presignedUrl, chunk);
-      const etag = partUploadRes.headers['etag'] || partUploadRes.headers['ETag'];
+      const etag =
+        partUploadRes.headers["etag"] || partUploadRes.headers["ETag"];
 
       uploadedParts.push({ partNumber, etag });
 
@@ -536,7 +551,7 @@ async function uploadLargeGameBuild({
     const completeRes = await axios.post(
       `/api/assets/${assetId}/multipart/complete`,
       { parts: uploadedParts },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return completeRes.data.data.asset;
@@ -545,7 +560,7 @@ async function uploadLargeGameBuild({
     await axios.post(
       `/api/assets/${assetId}/multipart/abort`,
       {},
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     throw err;
   }
@@ -564,7 +579,8 @@ npm test
 ```
 
 ### Test Coverage includes:
-* `tests/storage.test.js`: Filename sanitization, version normalization, key generator, R2 service methods.
-* `tests/games.test.js`: Game CRUD, slug auto-generation, filtering, and authorization guards.
-* `tests/assets.test.js`: Single upload lifecycle, MIME/size validations, upload completion verification, public/private access rules.
-* `tests/multipart.test.js`: Multipart upload start, part signing, completion, and abort flows.
+
+- `tests/storage.test.js`: Filename sanitization, version normalization, key generator, R2 service methods.
+- `tests/games.test.js`: Game CRUD, slug auto-generation, filtering, and authorization guards.
+- `tests/assets.test.js`: Single upload lifecycle, MIME/size validations, upload completion verification, public/private access rules.
+- `tests/multipart.test.js`: Multipart upload start, part signing, completion, and abort flows.

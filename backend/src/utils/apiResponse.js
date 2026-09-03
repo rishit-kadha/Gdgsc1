@@ -6,13 +6,13 @@
  */
 
 class ApiError extends Error {
-    constructor(statusCode, code, message, details = null) {
-        super(message);
-        this.statusCode = statusCode;
-        this.code = code;
-        this.details = details;
-        Error.captureStackTrace(this, this.constructor);
-    }
+  constructor(statusCode, code, message, details = null) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code;
+    this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
 }
 
 /**
@@ -23,14 +23,14 @@ class ApiError extends Error {
  * @param {object} [meta] - Optional metadata (pagination, counts, etc.)
  */
 const sendSuccess = (res, data, statusCode = 200, meta = null) => {
-    const payload = {
-        success: true,
-        data,
-    };
-    if (meta) {
-        payload.meta = meta;
-    }
-    return res.status(statusCode).json(payload);
+  const payload = {
+    success: true,
+    data,
+  };
+  if (meta) {
+    payload.meta = meta;
+  }
+  return res.status(statusCode).json(payload);
 };
 
 /**
@@ -42,21 +42,21 @@ const sendSuccess = (res, data, statusCode = 200, meta = null) => {
  * @param {any} [details=null] - Optional detailed validation or debug info
  */
 const sendError = (res, code, message, statusCode = 500, details = null) => {
-    const payload = {
-        success: false,
-        error: {
-            code: code || 'INTERNAL_SERVER_ERROR',
-            message: message || 'An unexpected error occurred',
-        },
-    };
-    if (details) {
-        payload.error.details = details;
-    }
-    return res.status(statusCode).json(payload);
+  const payload = {
+    success: false,
+    error: {
+      code: code || "INTERNAL_SERVER_ERROR",
+      message: message || "An unexpected error occurred",
+    },
+  };
+  if (details) {
+    payload.error.details = details;
+  }
+  return res.status(statusCode).json(payload);
 };
 
 module.exports = {
-    ApiError,
-    sendSuccess,
-    sendError,
+  ApiError,
+  sendSuccess,
+  sendError,
 };

@@ -1,9 +1,9 @@
 // backend/src/controllers/assetController.js
 
-const asyncHandler = require('express-async-handler');
-const AssetService = require('../services/assetService');
-const GameAsset = require('../models/GameAsset');
-const { sendSuccess, sendError, ApiError } = require('../utils/apiResponse');
+const asyncHandler = require("express-async-handler");
+const AssetService = require("../services/assetService");
+const GameAsset = require("../models/GameAsset");
+const { sendSuccess, sendError, ApiError } = require("../utils/apiResponse");
 
 const assetService = new AssetService();
 
@@ -13,22 +13,23 @@ const assetService = new AssetService();
  * @access  Private/Admin
  */
 exports.createUploadUrl = asyncHandler(async (req, res) => {
-    const { gameId } = req.params;
-    const { filename, contentType, size, type, category, version, visibility } = req.body;
+  const { gameId } = req.params;
+  const { filename, contentType, size, type, category, version, visibility } =
+    req.body;
 
-    const result = await assetService.createUploadUrl({
-        gameId,
-        filename,
-        contentType,
-        size,
-        type,
-        category,
-        version,
-        visibility,
-        user: req.user,
-    });
+  const result = await assetService.createUploadUrl({
+    gameId,
+    filename,
+    contentType,
+    size,
+    type,
+    category,
+    version,
+    visibility,
+    user: req.user,
+  });
 
-    return sendSuccess(res, result, 201);
+  return sendSuccess(res, result, 201);
 });
 
 /**
@@ -37,14 +38,14 @@ exports.createUploadUrl = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.completeUpload = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
+  const { assetId } = req.params;
 
-    const result = await assetService.completeUpload({
-        assetId,
-        user: req.user,
-    });
+  const result = await assetService.completeUpload({
+    assetId,
+    user: req.user,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
 
 /**
@@ -53,22 +54,23 @@ exports.completeUpload = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.startMultipartUpload = asyncHandler(async (req, res) => {
-    const { gameId } = req.params;
-    const { filename, contentType, size, type, category, version, visibility } = req.body;
+  const { gameId } = req.params;
+  const { filename, contentType, size, type, category, version, visibility } =
+    req.body;
 
-    const result = await assetService.startMultipartUpload({
-        gameId,
-        filename,
-        contentType,
-        size,
-        type,
-        category,
-        version,
-        visibility,
-        user: req.user,
-    });
+  const result = await assetService.startMultipartUpload({
+    gameId,
+    filename,
+    contentType,
+    size,
+    type,
+    category,
+    version,
+    visibility,
+    user: req.user,
+  });
 
-    return sendSuccess(res, result, 201);
+  return sendSuccess(res, result, 201);
 });
 
 /**
@@ -77,19 +79,19 @@ exports.startMultipartUpload = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.signMultipartPart = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
-    const { partNumber } = req.body;
+  const { assetId } = req.params;
+  const { partNumber } = req.body;
 
-    if (!partNumber) {
-        throw new ApiError(400, 'VALIDATION_ERROR', 'partNumber is required');
-    }
+  if (!partNumber) {
+    throw new ApiError(400, "VALIDATION_ERROR", "partNumber is required");
+  }
 
-    const result = await assetService.signMultipartPart({
-        assetId,
-        partNumber,
-    });
+  const result = await assetService.signMultipartPart({
+    assetId,
+    partNumber,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
 
 /**
@@ -98,19 +100,19 @@ exports.signMultipartPart = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.completeMultipartUpload = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
-    const { parts } = req.body;
+  const { assetId } = req.params;
+  const { parts } = req.body;
 
-    if (!Array.isArray(parts) || parts.length === 0) {
-        throw new ApiError(400, 'VALIDATION_ERROR', 'parts array is required');
-    }
+  if (!Array.isArray(parts) || parts.length === 0) {
+    throw new ApiError(400, "VALIDATION_ERROR", "parts array is required");
+  }
 
-    const result = await assetService.completeMultipartUpload({
-        assetId,
-        parts,
-    });
+  const result = await assetService.completeMultipartUpload({
+    assetId,
+    parts,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
 
 /**
@@ -119,13 +121,13 @@ exports.completeMultipartUpload = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.abortMultipartUpload = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
+  const { assetId } = req.params;
 
-    const result = await assetService.abortMultipartUpload({
-        assetId,
-    });
+  const result = await assetService.abortMultipartUpload({
+    assetId,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
 
 /**
@@ -134,16 +136,16 @@ exports.abortMultipartUpload = asyncHandler(async (req, res) => {
  * @access  Public (for public assets) / Private (for private assets)
  */
 exports.getDownloadUrl = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
-    const download = req.query.download === 'true';
+  const { assetId } = req.params;
+  const download = req.query.download === "true";
 
-    const result = await assetService.getDownloadUrl({
-        assetId,
-        user: req.user,
-        download,
-    });
+  const result = await assetService.getDownloadUrl({
+    assetId,
+    user: req.user,
+    download,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
 
 /**
@@ -152,19 +154,29 @@ exports.getDownloadUrl = asyncHandler(async (req, res) => {
  * @access  Public / Private
  */
 exports.getAssetById = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
+  const { assetId } = req.params;
 
-    const asset = await GameAsset.findById(assetId).populate('game', 'title name slug');
-    if (!asset || asset.status === 'deleted') {
-        throw new ApiError(404, 'ASSET_NOT_FOUND', `Asset '${assetId}' not found`);
-    }
+  const asset = await GameAsset.findById(assetId).populate(
+    "game",
+    "title name slug",
+  );
+  if (!asset || asset.status === "deleted") {
+    throw new ApiError(404, "ASSET_NOT_FOUND", `Asset '${assetId}' not found`);
+  }
 
-    // Check visibility
-    if (asset.visibility === 'private' && (!req.user || req.user.role !== 'admin')) {
-        throw new ApiError(403, 'FORBIDDEN', 'Not authorized to view this private asset');
-    }
+  // Check visibility
+  if (
+    asset.visibility === "private" &&
+    (!req.user || req.user.role !== "admin")
+  ) {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "Not authorized to view this private asset",
+    );
+  }
 
-    return sendSuccess(res, asset, 200);
+  return sendSuccess(res, asset, 200);
 });
 
 /**
@@ -173,19 +185,19 @@ exports.getAssetById = asyncHandler(async (req, res) => {
  * @access  Public / Private (Admin sees pending/private)
  */
 exports.getGameAssets = asyncHandler(async (req, res) => {
-    const { gameId } = req.params;
-    const { type, category, version, status } = req.query;
+  const { gameId } = req.params;
+  const { type, category, version, status } = req.query;
 
-    const result = await assetService.getGameAssets({
-        gameId,
-        type,
-        category,
-        version,
-        status,
-        user: req.user,
-    });
+  const result = await assetService.getGameAssets({
+    gameId,
+    type,
+    category,
+    version,
+    status,
+    user: req.user,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
 
 /**
@@ -194,12 +206,12 @@ exports.getGameAssets = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.deleteAsset = asyncHandler(async (req, res) => {
-    const { assetId } = req.params;
+  const { assetId } = req.params;
 
-    const result = await assetService.deleteAsset({
-        assetId,
-        user: req.user,
-    });
+  const result = await assetService.deleteAsset({
+    assetId,
+    user: req.user,
+  });
 
-    return sendSuccess(res, result, 200);
+  return sendSuccess(res, result, 200);
 });
